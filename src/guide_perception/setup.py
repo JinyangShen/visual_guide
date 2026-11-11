@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'fake_image_pub = guide_perception.fake_image_pub:main',
             'guide_node = guide_perception.guide_node:main',
         ],
     },
