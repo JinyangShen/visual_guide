@@ -78,3 +78,35 @@
 - `RcutilsLogger.info()` 不接受多个位置参数，只能传单串或 f-string。
 - `ros2 topic echo --once` 里角速度在 `angular.z`，不是 `angular.x`。
 - `ros2 daemon stop` 之后要 `ros2 daemon start`，否则 CLI 报 `!rclpy.ok()`。
+
+## Day 12 — 2026-11-17
+
+### 目标
+把"可交付"补齐：文档、自动化测试、CI、上层消费端，并明确真机阶段的待办。
+
+### 完成
+- 新增 `guide_upper` 包：上层提示节点 `search_hint_node`。
+  这是方案 A 里"给上层的建议"通道的消费端——执行层不订阅 `/search_hint`，
+  由这里把回归建议转成中文提示（带节流），可直接接 TTS 或遥控台界面。
+  `guide_system.launch.py` 增加 `use_upper` 参数默认启动它。
+- 自动化测试（此前只有 lint）：
+  - `guide_executor/test/test_executor_node.py`：指令映射、未知指令 fail-safe、
+    CAUTION 方向继承、加速度限幅，以及"发指令→有速度、断流→看门狗停车"的集成测试。
+  - `guide_perception/test/test_supervisor_node.py`：七级优先级逐条验证，
+    含"超声波压过视觉障碍""转向时不降速""超声波超时后不参与降速"等交互。
+  - `guide_upper/test/test_search_hint_node.py`：三种回归方向的提示文本、
+    `valid=false` 忽略、节流行为。
+- 新增 GitHub Actions CI（`.github/workflows/ros2-ci.yml`）：
+  ROS 2 Humble 环境下 `colcon build` + `colcon test` + 上传测试产物。
+- 重写 README：架构图、目录结构、快速开始、话题一览、决策优先级、
+  执行层契约、参数速查、调试命令、已知限制。
+- 新增 `docs/ONBOARD.md`：真机接入清单（硬件信息表、板端环境、超声波/底盘真实实现、
+  参数标定表、SLAM 调优、10 项安全验收测试、桩代码位置速查）。
+- 现场盲道实拍 5 张归档到 `docs/images/`。
+- `EXECUTION_CONTRACT.md` 补 v1.2：解释执行层看门狗（0.5s）与仲裁感知超时（1.0s）
+  的先后关系，日志排查时如何区分两种停车。
+
+### 工程约定
+- 仓库内统一 LF 行尾（新增 `.gitattributes`），Windows 与 Linux 混编不再产生整文件 diff。
+- 中文 docstring 与 pydocstyle 的英文句号规则冲突，两个包的 `test_pep257.py`
+  统一豁免 D213/D400/D415，其余规则照常生效。

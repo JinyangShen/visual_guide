@@ -22,6 +22,8 @@
   <!-- launch 编排依赖 -->
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <!-- guide_system.launch.py 会启动上层提示节点 -->
+  <exec_depend>guide_upper</exec_depend>
   <!-- 视觉 SLAM 建图（RDK X5 上安装 ros-humble-rtabmap-ros） -->
   <exec_depend>rtabmap_launch</exec_depend>
 

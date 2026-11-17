@@ -6,8 +6,9 @@
   2. ultrasonic_node         超声波近距兜底（默认模拟模式）
   3. safety_supervisor_node  独立安全仲裁（感知崩溃时仍能输出停止指令）
   4. executor_node           执行层（只认 command，带 0.5s 指令看门狗）
-  5. trajectory_recorder_node 轨迹记录（/guide_trajectory，可选落盘 CSV）
-  6. rtabmap_ros             视觉 SLAM 建图（RGB-D 模式）
+  5. search_hint_node        上层提示（消费 /search_hint，转中文提示）
+  6. trajectory_recorder_node 轨迹记录（/guide_trajectory，可选落盘 CSV）
+  7. rtabmap_ros             视觉 SLAM 建图（RGB-D 模式）
 
 使用示例：
   # 开发调试（无相机/无硬件，超声波模拟）
@@ -116,6 +117,7 @@ def generate_launch_description():
     rtabmap_viz = LaunchConfiguration('rtabmap_viz')
     publish_camera_tf = LaunchConfiguration('publish_camera_tf')
     use_executor = LaunchConfiguration('use_executor')
+    use_upper = LaunchConfiguration('use_upper')
     use_mock_chassis = LaunchConfiguration('use_mock_chassis')
     executor_output_topic = LaunchConfiguration('executor_output_topic')
     executor_watchdog_timeout = LaunchConfiguration('executor_watchdog_timeout')
@@ -145,6 +147,8 @@ def generate_launch_description():
                               description='是否启动执行层（真机接底盘时保持 true）'),
         DeclareLaunchArgument('use_mock_chassis', default_value='false',
                               description='是否启动模拟底盘（开发验证用，真机保持 false）'),
+        DeclareLaunchArgument('use_upper', default_value='true',
+                              description='是否启动上层提示节点（消费 /search_hint）'),
         DeclareLaunchArgument('executor_output_topic',
                               default_value='/chassis/velocity',
                               description='执行层输出的底盘速度话题'),
@@ -176,7 +180,20 @@ def generate_launch_description():
             condition=IfCondition(use_executor),
         ),
 
-        # ---- 3. 模拟底盘（仅开发验证用；真机不要启动，避免和 rtabmap 抢 /odom） ----
+        # ---- 3. 上层提示节点：消费 /search_hint，转成中文提示 ----
+        # 执行层不订阅 /search_hint，这里是方案 A 里"给上层的建议"的消费端
+        Node(
+            package='guide_upper',
+            executable='search_hint_node',
+            name='search_hint',
+            output='screen',
+            parameters=[{
+                'throttle_sec': 5.0,
+            }],
+            condition=IfCondition(use_upper),
+        ),
+
+        # ---- 4. 模拟底盘（仅开发验证用；真机不要启动，避免和 rtabmap 抢 /odom） ----
         Node(
             package='guide_executor',
             executable='mock_chassis_node',
@@ -188,7 +205,7 @@ def generate_launch_description():
             condition=IfCondition(use_mock_chassis),
         ),
 
-        # ---- 4. 超声波节点 ----
+        # ---- 5. 超声波节点 ----
         Node(
             package='guide_perception',
             executable='ultrasonic_node',
@@ -203,7 +220,7 @@ def generate_launch_description():
             }],
         ),
 
-        # ---- 5. 相机坐标系静态 TF ----
+        # ---- 6. 相机坐标系静态 TF ----
         # 建图节点需要 camera_link -> base_link 的 TF；
         # 相机驱动未发布时由这里兜底，避免 rgbd_odometry 因缺 TF 而空转
         Node(
@@ -215,7 +232,7 @@ def generate_launch_description():
             condition=IfCondition(publish_camera_tf),
         ),
 
-        # ---- 6. RTAB-Map 视觉建图（RGB-D 模式） ----
+        # ---- 7. RTAB-Map 视觉建图（RGB-D 模式） ----
         # 需要相机驱动先发布 RGB / Depth / CameraInfo 三个话题
         # odom 话题由 rtabmap 的视觉里程计输出，自动喂给 guide_node
         IncludeLaunchDescription(

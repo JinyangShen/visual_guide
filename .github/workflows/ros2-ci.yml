@@ -1,0 +1,61 @@
+name: ROS 2 CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  humble:
+    name: ROS 2 Humble / Ubuntu 22.04
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ROS 2 Humble
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:ros2/ros2
+          sudo apt-get update
+          sudo apt-get install -y \
+            ros-humble-ros-base \
+            ros-humble-ament-cmake \
+            ros-humble-rosidl-default-generators \
+            ros-humble-cv-bridge \
+            ros-humble-tf2-ros \
+            ros-humble-sensor-msgs \
+            ros-humble-nav-msgs \
+            python3-colcon-common-extensions \
+            python3-colcon-mixin \
+            python3-pytest
+
+      - name: Install package dependencies with rosdep
+        run: |
+          source /opt/ros/humble/setup.bash
+          sudo apt-get update
+          rosdep update
+          rosdep install --from-paths src --ignore-src --rosdistro humble -y
+
+      - name: Build
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+      - name: Test
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon test --event-handlers console_direct-
+          colcon test-result --verbose
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ros2-test-results
+          path: |
+            build/*/test_results
+            log/
+          retention-days: 7

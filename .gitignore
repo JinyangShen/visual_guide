@@ -5,7 +5,12 @@ __pycache__/
 *.pyc
 
 # 本地调试素材（现场拍摄的照片），不入库
-images/
+# 只忽略仓库根目录的 images/，docs/images/ 是要入库的现场实拍
+/images/
+
+# pytest / 工具缓存
+.pytest_cache/
+.cache/
 
 # 本地导出的代码快照（用于同步到 Ubuntu 工作区）
 guide_ws_src.zip
