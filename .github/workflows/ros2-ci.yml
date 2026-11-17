@@ -14,40 +14,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 用官方 packages.ros.org 源安装 Humble。
+      # 这里不用 rosdep：rosdep 的索引库偶尔会遇到 GPG key 过期导致 CI 假失败，
+      # 本项目依赖固定且不多，直接显式 apt 安装更稳。
       - name: Install ROS 2 Humble
         run: |
           sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository ppa:ros2/ros2
+          sudo apt-get install -y curl gnupg lsb-release
+          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+            -o /usr/share/keyrings/ros-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" \
+            | sudo tee /etc/apt/sources.list.d/ros2.list
           sudo apt-get update
           sudo apt-get install -y \
             ros-humble-ros-base \
             ros-humble-ament-cmake \
+            ros-humble-ament-cmake-python \
             ros-humble-rosidl-default-generators \
+            ros-humble-rosidl-default-runtime \
             ros-humble-cv-bridge \
             ros-humble-tf2-ros \
+            ros-humble-launch-ros \
             ros-humble-sensor-msgs \
             ros-humble-nav-msgs \
+            ros-humble-geometry-msgs \
+            ros-humble-std-msgs \
+            ros-humble-ament-flake8 \
+            ros-humble-ament-pep257 \
+            ros-humble-ament-copyright \
             python3-colcon-common-extensions \
             python3-colcon-mixin \
-            python3-pytest
-
-      - name: Install package dependencies with rosdep
-        run: |
-          source /opt/ros/humble/setup.bash
-          sudo apt-get update
-          rosdep update
-          rosdep install --from-paths src --ignore-src --rosdistro humble -y
+            python3-pytest \
+            python3-numpy
 
       - name: Build
         run: |
           source /opt/ros/humble/setup.bash
-          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+          colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 
       - name: Test
         run: |
           source /opt/ros/humble/setup.bash
-          colcon test --event-handlers console_direct-
+          source install/setup.bash
+          colcon test
           colcon test-result --verbose
 
       - name: Upload test results
@@ -59,3 +68,4 @@ jobs:
             build/*/test_results
             log/
           retention-days: 7
+          if-no-files-found: warn
