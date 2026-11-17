@@ -110,3 +110,27 @@
 - 仓库内统一 LF 行尾（新增 `.gitattributes`），Windows 与 Linux 混编不再产生整文件 diff。
 - 中文 docstring 与 pydocstyle 的英文句号规则冲突，两个包的 `test_pep257.py`
   统一豁免 D213/D400/D415，其余规则照常生效。
+
+### 验证
+- `colcon test`：34 项测试 0 失败（3 项跳过为 ament_copyright 例行跳过）。
+- 整链实测（`use_rtabmap:=false use_mock_chassis:=true`）：
+  - 8 个节点全部起来，含新增的 `/search_hint`。
+  - 话题连接符合方案 A：`/search_hint` Publisher=1（safety_supervisor）
+    / Subscription=1（search_hint），**执行层不订阅**；
+    `/guide_command` Pub=1/Sub=1（只被 executor 消费）；`/chassis/velocity` Pub=1/Sub=1。
+  - 注入 `valid=true` 的建议 → `/search_hint_text` 输出
+    「盲道丢失，建议向左回归 1.5 米（请人工确认或等待重新识别）」；
+    注入 `valid=false` → 无输出（按契约忽略）。
+  - `/executor/status` 正常：`mode=STOP v=0.000 w=0.000 emergency=True watchdog=OK`。
+  - launch 日志无 error / exception。
+
+### 踩坑
+- 上层提示文案原本拼成「建议向向左回归」，方向词重复。改成
+  `建议{向左/向右/直行}回归`，三个方向的句子都通顺。
+- `.gitignore` 里的 `images/` 会连 `docs/images/` 一起排除（gitignore 规则按目录名
+  匹配任意层级），现场实拍因此没进库。改成 `/images/` 只忽略仓库根目录那份。
+- 批量同步到 Ubuntu 时 `scp` 目标目录写错，launch 文件被放到包根目录而不是
+  `launch/`，导致真实位置仍是旧版——整链验证时 `/search_hint` 节点起不来。
+  同步脚本要用绝对目标路径，并在同步后立刻 grep 关键符号确认。
+- 长任务不能靠 ssh 后台跑：ssh 断开或工具回收进程组时，launch 与子进程一起死。
+  验证脚本要一次性跑完并把结果回传，或者放进 tmux。
