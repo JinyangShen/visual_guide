@@ -28,6 +28,8 @@ find_package(std_msgs REQUIRED)
 
 set(msg_files
   "msg/GuideCommand.msg"
+  "msg/PerceptionState.msg"
+  "msg/SearchHint.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

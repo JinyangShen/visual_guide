@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>guide_executor</name>
+  <version>0.0.0</version>
+  <description>执行层：把 /guide_command 转成底盘速度指令（只认 command，带看门狗）</description>
+  <maintainer email="19090888115@163.com">jinyangshen</maintainer>
+  <license>Apache-2.0</license>
+
+  <depend>rclpy</depend>
+  <depend>guide_interfaces</depend>
+  <!-- 底盘速度指令输出 -->
+  <depend>geometry_msgs</depend>
+  <!-- 执行状态输出 -->
+  <depend>std_msgs</depend>
+  <!-- mock 底盘发布的里程计 -->
+  <depend>nav_msgs</depend>
+  <!-- mock 底盘发布 odom -> base_link TF -->
+  <depend>tf2_ros</depend>
+
+  <!-- launch 编排依赖 -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

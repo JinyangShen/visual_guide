@@ -10,6 +10,20 @@
   <depend>rclpy</depend>
   <depend>sensor_msgs</depend>
   <depend>guide_interfaces</depend>
+  <!-- SLAM 定位输入（nav_msgs/Odometry） -->
+  <depend>nav_msgs</depend>
+  <!-- 轨迹记录（nav_msgs/Path、geometry_msgs/PoseStamped） -->
+  <depend>geometry_msgs</depend>
+  <!-- 决策原因码发布（std_msgs/Int32） -->
+  <depend>std_msgs</depend>
+  <!-- 视觉处理 -->
+  <depend>cv_bridge</depend>
+
+  <!-- launch 编排依赖 -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <!-- 视觉 SLAM 建图（RDK X5 上安装 ros-humble-rtabmap-ros） -->
+  <exec_depend>rtabmap_launch</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -1,0 +1,11 @@
+# 仓库内统一以 LF 存储行尾，避免 Windows / Linux 混编时产生整文件 diff
+* text=auto eol=lf
+
+# 二进制文件不做行尾转换
+*.mp4 binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.bag binary
+*.db3 binary

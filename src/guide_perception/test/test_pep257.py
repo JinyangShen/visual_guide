@@ -19,5 +19,10 @@ import pytest
 @pytest.mark.linter
 @pytest.mark.pep257
 def test_pep257():
-    rc = main(argv=['.', 'test'])
+    # 本项目 docstring 统一用中文书写，因此豁免三条与英文标点强相关的规则：
+    #   D213  多行 docstring 摘要应从第二行开始（中文摘要习惯写在首行）
+    #   D400  首行需以英文句点结尾
+    #   D415  首行需以英文句点/问号/叹号结尾
+    # 其余 PEP 257 规则仍然生效。
+    rc = main(argv=['--add-ignore', 'D213', 'D400', 'D415', '.', 'test'])
     assert rc == 0, 'Found code style errors / warnings'

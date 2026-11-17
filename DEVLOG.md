@@ -40,3 +40,41 @@
 - `guide_node` 升级为自适应模式：优先订阅 `/hobot_dnn_detection` 获取 YOLO 障碍物结果；如果环境缺失 `ai_msgs`（如 x86），自动降级为 HSV 启发式障碍物检测。
 - 实现了安全决策融合：DNN 障碍物优先级最高，其次盲道丢失，最后是循线偏移。
 - 验证了 x86 环境下的降级逻辑（HSV 模式），通道和指令输出正常。
+
+## Day 11 — 2026-11-17
+
+### 目标
+打通"感知—决策—执行"全链路，并补上此前缺失的执行层。
+
+### 完成
+- 新增 `guide_executor`（ament_python）包，执行层节点 `executor_node`：
+  - 只依据 `GuideCommand.command` 动作，忽略 reason / confidence /
+    search_direction / regression_distance 等全部辅助字段（方案 A 契约）。
+  - 自带 0.5s 指令看门狗：上游断流即自行停车，不依赖感知层来告知。
+  - `MODE_STOP` 立即停车（`emergency` 时硬停），不做减速滑行。
+  - 加速度斜坡限幅避免速度突变；未知 command 按停车处理（fail-safe）。
+  - 输出 `/chassis/velocity`（Twist）与 `/executor/status`（状态监控）。
+- 新增 `chassis_driver.py`（底盘下发接口，串口 / CAN 接入点已预留）与
+  `mock_chassis_node.py`（差速模型模拟底盘，供无真机时闭环验证）。
+- 新增 `executor.launch.py`；`guide_system.launch.py` 增加 `use_executor`、
+  `use_mock_chassis`、`executor_output_topic`、`executor_watchdog_timeout`。
+- 感知侧此前已完成：超声波节点、安全仲裁节点、轨迹记录节点，
+  以及 `/search_hint` 搜索建议通道（执行层不订阅）。
+
+### 验证
+- `colcon test`：guide_perception / guide_executor 两个包 lint 全绿
+  （顺带修掉 guide_perception 里 3 处既有 flake8 问题）。
+- 执行层实测（Ubuntu，注入指令并采样 `/chassis/velocity`）：
+  - FORWARD → lin_x=0.30；LEFT → ang_z=+0.40；RIGHT → ang_z=-0.40；
+    CAUTION → lin_x=0.15（或沿用方向的半角速度）；STOP → 全零。
+  - 契约：携带 `search_direction` / `regression_distance` 的指令不影响运动结果。
+  - 看门狗：断流 1.5s 后 lin_x=0，状态标记 `watchdog=WATCHDOG_STOP`。
+  - 订阅关系：`ros2 node info /executor` 仅有 `/guide_command` 一个订阅。
+- 闭环：mock 底盘按 `/chassis/velocity` 积分出 `/odom`。
+
+### 踩坑
+- `rclpy.node.Node` 必须 `from rclpy.node import Node`；只 `import rclpy`
+  会在类定义处抛 AttributeError。
+- `RcutilsLogger.info()` 不接受多个位置参数，只能传单串或 f-string。
+- `ros2 topic echo --once` 里角速度在 `angular.z`，不是 `angular.x`。
+- `ros2 daemon stop` 之后要 `ros2 daemon start`，否则 CLI 报 `!rclpy.ok()`。
