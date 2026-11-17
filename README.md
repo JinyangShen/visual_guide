@@ -215,6 +215,7 @@ colcon test-result --verbose
 | [docs/ONBOARD.md](docs/ONBOARD.md) | **拿到真机后的接入清单**：硬件确认、驱动实现、参数标定、安全验收 |
 | [DEVLOG.md](DEVLOG.md) | 开发日志，记录每个阶段的设计取舍与踩坑 |
 | [docs/images/](docs/images/) | 现场盲道实拍（正中间 / 偏左 / 偏右 / 有障碍物） |
+| `guide_ws_src.zip` | `src/` 的源码快照，便于不装 git 也能整包拷到开发机（内容与仓库一致） |
 
 ## 已知限制
 

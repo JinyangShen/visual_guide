@@ -11,6 +11,3 @@ __pycache__/
 # pytest / 工具缓存
 .pytest_cache/
 .cache/
-
-# 本地导出的代码快照（用于同步到 Ubuntu 工作区）
-guide_ws_src.zip
